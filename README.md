@@ -122,7 +122,4 @@ La precisión es un promedio que esconde **dónde** falla el modelo:
 | Casi empatados (margen < 0.05, n = 135) | **90.37 %** |
 | Claros (n = 865) | 100.00 % |
 
-Además:
-- Se mide contra una **política sintética** que nosotros inventamos. La red puede copiar perfectamente una regla que no representa bien a una mascota real.
-- Con **clases desbalanceadas** sería peor. Si 95 % de los ejemplos fueran COMER, un modelo que siempre dice COMER tendría 95 % de precisión sin aprender nada. Aquí, como las clases están balanceadas, ese modelo acertaría solo 32.90 %.
-- No dice nada sobre la **confianza** de cada predicción ni sobre datos fuera del rango 0 a 1.
+
