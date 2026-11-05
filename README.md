@@ -123,3 +123,81 @@ La precisión es un promedio que esconde **dónde** falla el modelo:
 | Claros (n = 865) | 100.00 % |
 
 
+
+---
+
+# Neurito 2.0: aprende a saltar (respuestas de [GUIA_SALTO.md](GUIA_SALTO.md))
+
+Red **3 → 12 → 1** (ReLU + sigmoide) que decide cuándo saltar. Se ejecuta con `uv run saltar.py`.
+
+**Cómo se midió:** se repitió el ciclo de [saltar.py](saltar.py) sin interfaz gráfica. Se usaron los mismos datos (5000 de entrenamiento y 1500 de prueba, semilla 42) y la misma física de [salto_juego.py](salto_juego.py). Cada prueba de juego dura **9000 fotogramas (5 minutos a 30 FPS)** en modo automático.
+
+### 1. Juego sin entrenar
+
+| Épocas | Precisión (prueba) | Esquivados | Choques | Saltos |
+|---|---|---|---|---|
+| 0 | 44.93 % | 0 | 59 | 0 |
+
+**Conclusión:** con pesos aleatorios la probabilidad de salto nunca llega a 0.5, así que Neurito **nunca salta** y choca con todos los obstáculos. La precisión del 44.93 % aparece porque responde siempre «esperar» y acierta solo los ejemplos negativos.
+
+### 2. Entrenar de cien en cien épocas
+
+| Épocas | Pérdida | Precisión (prueba) | Esquivados | Choques |
+|---|---|---|---|---|
+| 100 | 0.2601 | 91.20 % | 67 | 5 |
+| 200 | 0.2306 | 91.87 % | 72 | 1 |
+| 300 | 0.2066 | 92.33 % | 74 | **0** |
+| 500 | 0.1368 | 94.13 % | 74 | 0 |
+| 700 | 0.0858 | 96.47 % | 74 | 0 |
+| 1000 | 0.0574 | 97.80 % | 74 | 0 |
+| 2000 | 0.0306 | 98.80 % | 74 | 0 |
+
+**Conclusión:** la pérdida baja todo el tiempo y la precisión sube. El juego, en cambio, deja de mejorar desde la época **300**: ya no choca, aunque la precisión siga en 92 %. Desde ese punto, los ejemplos que la red mejora son casos del borde de la ventana que no cambian el resultado en el juego. Mejor pérdida no siempre significa mejor comportamiento.
+
+### 3. Neuronas ocultas: 3, 12 y 24
+
+| Ocultas | Épocas | Pérdida | Precisión (entrenamiento) | Precisión (prueba) | Choques |
+|---|---|---|---|---|---|
+| 3 | 1000 | 0.2060 | 93.66 % | 93.20 % | 0 |
+| 3 | 3000 | 0.1978 | 94.04 % | 93.67 % | 0 |
+| 12 | 1000 | 0.0574 | 98.04 % | 97.80 % | 0 |
+| 12 | 3000 | 0.0219 | 99.28 % | 99.13 % | 0 |
+| 24 | 1000 | 0.0502 | 98.28 % | 97.73 % | 0 |
+| 24 | 3000 | 0.0207 | 99.40 % | 99.27 % | 0 |
+
+**Conclusión:**
+- Con **3 neuronas** la red se estanca cerca del 94 %. Le falta capacidad para formar una ventana con dos bordes («ni muy lejos ni muy cerca»).
+- **12 y 24** quedan casi iguales. Duplicar las neuronas apenas mejora.
+- La **generalización es buena en los tres casos**: entre entrenamiento y prueba hay menos de 0.5 puntos de diferencia, así que no hay sobreajuste. Los datos son sintéticos y salen de la misma regla, por eso la prueba se parece mucho al entrenamiento.
+- Los tres tamaños esquivan todo en el juego. La ventana física es más ancha que la ventana de las etiquetas, así que no hace falta clasificar perfecto.
+
+### 4. Tasa de aprendizaje: 0.01, 0.8 y 1.2
+
+Pérdida inicial en los tres casos: 0.7099.
+
+| Tasa | Épocas | Pérdida | Precisión (prueba) | Esquivados | Choques |
+|---|---|---|---|---|---|
+| 0.01 | 100 | 0.6449 | 90.73 % | 58 | 12 |
+| 0.01 | 1000 | 0.4302 | 86.53 % | **0** | **56** |
+| 0.01 | 3000 | 0.3111 | 88.60 % | **0** | **55** |
+| 0.8 | 100 | 0.2601 | 91.20 % | 67 | 5 |
+| 0.8 | 1000 | 0.0574 | 97.80 % | 74 | 0 |
+| 1.2 | 100 | 0.2560 | 89.27 % | 57 | 13 |
+| 1.2 | 300 | 0.1689 | 91.40 % | 71 | 2 |
+| 1.2 | 1000 | 0.0392 | 98.27 % | 74 | 0 |
+| 1.2 | 3000 | 0.0157 | 99.60 % | 74 | 0 |
+
+**Conclusión:**
+- **0.01 converge muy lento.** Después de 3000 épocas la pérdida (0.31) sigue peor que la de 0.8 en 100 épocas. Lo más importante: con **88.6 % de precisión choca en todos los obstáculos**. La red todavía marca «saltar» con tiempos de 18 a 23 fotogramas. Todos sus errores son falsos positivos (510 en entrenamiento, 0 falsos negativos), así que **salta demasiado pronto** y aterriza antes de pasar el obstáculo. Además, después de cada choque la pista vuelve a velocidad 5.5, así que repite el mismo error siempre.
+- **0.8 (la base)** converge rápido y de forma estable.
+- **1.2** empieza un poco más irregular (más choques en las primeras 300 épocas). Después converge **más rápido** que 0.8 y llega a una pérdida menor. Con este problema 1.2 todavía no diverge; una tasa mucho mayor sí podría volver inestable el entrenamiento.
+
+### Ventana física frente a ventana de entrenamiento
+
+Para entender los resultados se simuló un salto en cada tiempo estimado y velocidad posible:
+
+| Velocidad (px/fotograma) | 4.5 | 5.5 | 6.5 | 7.5 | 8.5 |
+|---|---|---|---|---|---|
+| Saltos que esquivan (tiempo en fotogramas) | 4.5 a 15 | 4.5 a 18 | 5 a 20.5 | 4.5 a 22 | 5 a 23.5 |
+
+Las etiquetas piden saltar entre **7 y 13**, una ventana que cabe dentro de la física en todas las velocidades. Por eso la red base no choca aunque no clasifique perfecto. Con 0.01, en cambio, la red salta en 18 a 23 fotogramas, por fuera del límite físico. En resumen, **la precisión cuenta errores, pero no dice si son errores graves para el juego**.
