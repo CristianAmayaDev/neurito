@@ -201,3 +201,9 @@ Para entender los resultados se simuló un salto en cada tiempo estimado y veloc
 | Saltos que esquivan (tiempo en fotogramas) | 4.5 a 15 | 4.5 a 18 | 5 a 20.5 | 4.5 a 22 | 5 a 23.5 |
 
 Las etiquetas piden saltar entre **7 y 13**, una ventana que cabe dentro de la física en todas las velocidades. Por eso la red base no choca aunque no clasifique perfecto. Con 0.01, en cambio, la red salta en 18 a 23 fotogramas, por fuera del límite físico. En resumen, **la precisión cuenta errores, pero no dice si son errores graves para el juego**.
+
+---
+
+# Neurito 3.0: aprende a encontrar comida en un laberinto
+
+Las respuestas a los experimentos de [GUIA_LABERINTO.md](GUIA_LABERINTO.md) están en [RESPUESTAS_LABERINTO.md](RESPUESTAS_LABERINTO.md).
